@@ -3,6 +3,9 @@ package com.spotify.testscenarios;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.spotify.pojo.Error;
+import com.spotify.pojo.PlayList;
+
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.filter.log.LogDetail;
@@ -18,7 +21,7 @@ public class TC01_PlayListCRUD {
 	public String baseURI = "https://api.spotify.com";
 	public RequestSpecification requestSpecification;
 	public ResponseSpecification responseSpecification;
-	public String access_token = "BQC0usDob9fW1PP0j1v9dLu8SsfTIjAOlka8LBwXazi6gC9Qc_2-WQmTGIOUjh4tob6GeRMUdBWDZStm02NlPTGqLjuh0IgsqRzhxU11W7R7x8AcrTrPYvT8OAlNxrHRuyUCLlpb51EkFFJJl8QGKkDpnw36GoJauYK7OffR7i9NM050B8IoKbxDh2z_oJ3JtNpoPa4Z-FXXwDjyt7nZK0rEb1ijhpGtm_fOB-rBRhIgrY5sVG2U5GVodsNiq-ytHRg4Bnc3HI3JlKuHroWcLPow";
+	public String access_token = "BQDaDfpwfAdtS4jFdgvepEWGxPxaGepSDX1w7VwANZRsICj6U9zcyMCjft_0Ve03wwNxpU-pDbTk-YXuvZ7YRYW0aeI_xu9FKhBRyxYSe8T38qYhwt5WNn4Tv4EE7iGCAL7HTPPF-95XJI5Y3VRN_kY3GJG_dDGu_Z_utayEcAo_DDwrakqlkZ-q7qpHzpquBqG_UEQcHWJ_PIBDLUNJE_TIVqgDN4Ex22K86PElydsoZTvTgMwSWlYVb-5TAj4bOIGVHl0rfuvpPsjL7OnIoqCX";
 	public String userID = "31cwetdnd4oeo5wq2c7khzkqt5oe";
 	public String playListID = "4Vj8Fgtb7UTR5LHOGKJqu9";
 	@BeforeClass
@@ -43,48 +46,67 @@ public class TC01_PlayListCRUD {
 	
 	@Test(priority = 1)
 	public void validateCreatePlayList() {
-		String payLoad = "{\r\n"
-				+ "    \"name\": \"New Playlist from Batch 5 restassure\",\r\n"
-				+ "    \"description\": \"New playlist description from Batch 5 restassure\",\r\n"
-				+ "    \"public\": true\r\n"
-				+ "}";
-		given()
+		
+		PlayList requestPlayList = new PlayList();
+		requestPlayList.setName("New Playlist from Batch 5 restassure");
+		requestPlayList.setDescription("New playlist description from Batch 5 restassure");
+		requestPlayList.set_public(true);
+		
+		PlayList responsePlayList = given()
 		.spec(requestSpecification)
-		.body(payLoad)
+		.body(requestPlayList)
 		.when()
 		.post("/users/"+userID+"/playlists")
 		.then()
 		.spec(responseSpecification)
-		.body("name", equalTo("New Playlist from Batch 5 restassure"),
-			  "description",equalTo("New playlist description from Batch 5 restassure"),
-			  "public",equalTo(true));
+		.contentType(ContentType.JSON)
+		.statusCode(201)
+		.and()
+		.extract()
+		.response()
+		.as(PlayList.class);
 		
+		assertThat(responsePlayList.getName(), equalTo(requestPlayList.getName()));
+		assertThat(responsePlayList.getDescription(), equalTo(requestPlayList.getDescription()));
+		assertThat(responsePlayList.get_public(), equalTo(requestPlayList.get_public()));
 	}
 	
 	@Test(priority = 2)
 	public void validateGetPlayListByPassingPlayListID() {
-		given()
+		
+		PlayList requestPlayList = new PlayList();
+		requestPlayList.setName("Update Playlist from Batch 5 restassure");
+		requestPlayList.setDescription("Update playlist description from Batch 5 restassure");
+		requestPlayList.set_public(true);
+		
+		
+		PlayList responsePlayList = given()
 		.spec(requestSpecification)
 		.when()
 		.get("/playlists/"+playListID)
 		.then()
 		.spec(responseSpecification)
 		.contentType(ContentType.JSON)
-		.body("name", equalTo("Update Playlist from Batch 5 restassure"),
-			  "description",equalTo("Update playlist description from Batch 5 restassure"),
-			  "public",equalTo(true));
+		.statusCode(200)
+		.and()
+		.extract()
+		.response().as(PlayList.class);
+		
+		assertThat(responsePlayList.getName(), equalTo(requestPlayList.getName()));
+		assertThat(responsePlayList.getDescription(), equalTo(requestPlayList.getDescription()));
+		assertThat(responsePlayList.get_public(), equalTo(requestPlayList.get_public()));
 	}
 	
 	@Test(priority = 3)
 	public void validateUpdatePlayListByPassingPlayListID() {
-		String payLoad = "{\r\n"
-				+ "    \"name\": \"Update Playlist from Batch 5 restassure\",\r\n"
-				+ "    \"description\": \"Update playlist description from Batch 5 restassure\",\r\n"
-				+ "    \"public\": true\r\n"
-				+ "}";
+		PlayList requestPlayList = new PlayList();
+		requestPlayList.setName("Update Playlist from Batch 5 restassure");
+		requestPlayList.setDescription("Update playlist description from Batch 5 restassure");
+		requestPlayList.set_public(true);
+		
 		given()
 		.spec(requestSpecification)
-		.body(payLoad)
+		.body(requestPlayList)
 		.when()
 		.put("/playlists/"+playListID)
 		.then()
@@ -95,21 +117,26 @@ public class TC01_PlayListCRUD {
 
 	@Test(priority = 4)
 	public void validateCreatePlayListWithNoMandatoryField() {
-		String payLoad = "{\r\n"
-				+ "    \"name\": \"\",\r\n"
-				+ "    \"description\": \"New playlist description from Batch 5 restassure\",\r\n"
-				+ "    \"public\": true\r\n"
-				+ "}";
-		given()
+		PlayList requestPlayList = new PlayList();
+		requestPlayList.setName("");
+		requestPlayList.setDescription("Update playlist description from Batch 5 restassure");
+		requestPlayList.set_public(true);
+		
+		Error ResponseError =  given()
 		.spec(requestSpecification)
-		.body(payLoad)
+		.body(requestPlayList)
 		.when()
 		.post("/users/"+userID+"/playlists")
 		.then()
 		.spec(responseSpecification)
-		.body("error.status", equalTo(400),
-			  "error.message",equalTo("Missing required field: name"));
+		.statusCode(400)
+		.and()
+		.extract()
+		.response()
+		.as(Error.class);
 		
+		assertThat(ResponseError.getError().getStatus(), equalTo(400));
+		assertThat(ResponseError.getError().getMessage(), equalTo("Missing required field: name"));
 	}
 	
 	
